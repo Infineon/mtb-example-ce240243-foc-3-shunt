@@ -6,7 +6,7 @@ This code example demonstrates the implementation of PMSM sensorless  3 shunt fi
 
 [View this README on GitHub.](https://github.com/Infineon/mtb-example-ce240243-foc-3-shunt)
 
-[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyNDAyNDMiLCJTcGVjIE51bWJlciI6IjAwMi00MDI0MyIsIkRvYyBUaXRsZSI6IlBTT0MmdHJhZGU7IENvbnRyb2wgTUNVOiBQTVNNIEZPQyBTTCB3aXRoIDMtc2h1bnQiLCJyaWQiOiJwcmFzaGFudGFiaGkiLCJEb2MgdmVyc2lvbiI6IjEuMC4wIiwiRG9jIExhbmd1YWdlIjoiRW5nbGlzaCIsIkRvYyBEaXZpc2lvbiI6Ik1DRCIsIkRvYyBCVSI6IklDVyIsIkRvYyBGYW1pbHkiOiJQU09DIn0=)
+[Provide feedback on this code example.](https://cypress.co1.qualtrics.com/jfe/form/SV_1NTns53sK2yiljn?Q_EED=eyJVbmlxdWUgRG9jIElkIjoiQ0UyNDAyNDMiLCJTcGVjIE51bWJlciI6IjAwMi00MDI0MyIsIkRvYyBUaXRsZSI6IlBTT0MmdHJhZGU7IENvbnRyb2wgTUNVOiBQTVNNIEZPQyBTTCB3aXRoIDMtc2h1bnQiLCJyaWQiOiJwcmFzaGFudGFiaGkiLCJEb2MgdmVyc2lvbiI6IjIuMC4wIiwiRG9jIExhbmd1YWdlIjoiRW5nbGlzaCIsIkRvYyBEaXZpc2lvbiI6Ik1DRCIsIkRvYyBCVSI6IklDVyIsIkRvYyBGYW1pbHkiOiJQU09DIn0=)
 
 
 ## Requirements
@@ -328,6 +328,7 @@ Document title: *CE240243* – *Motor Control: PMSM FOC SL with 3-shunt*
  Version | Description of change
  ------- | ---------------------
  1.0.0   | New code example
+ 2.0.0   | Updated for motor-ctrl-lib 2.0
 <br>
 
 

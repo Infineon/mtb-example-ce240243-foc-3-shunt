@@ -8,7 +8,7 @@
 *
 *
 *******************************************************************************
-* Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2024-2025, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -51,7 +51,6 @@ const uint8_t Em_Eeprom_Storage[srss_0_eeprom_0_PHYSICAL_SIZE] = {0u};
 
 void vres_0_motor_0_slow_callback(void);
 void vres_0_motor_0_fast_callback(void);
-extern int16_t vres_0_motor_0_fastDataPtr[3];
 
 TEMP_SENS_LUT_t   Temp_Sens_LUT   =
 {
@@ -118,32 +117,29 @@ float MCU_TempSensorCalc()
 
 void vres_0_motor_0_fast_callback()
 {
-    const int32_t Curr_ADC_Half_Point_Ticks = (0x1<<11);
-    sensor_iface.i_samp_0.raw = hw.mcu.adc_scale.i_uvw * (Curr_ADC_Half_Point_Ticks - (uint16_t)vres_0_motor_0_fastDataPtr[0]);
-    sensor_iface.i_samp_1.raw = hw.mcu.adc_scale.i_uvw * (Curr_ADC_Half_Point_Ticks - (uint16_t)vres_0_motor_0_fastDataPtr[1]);
-    sensor_iface.i_samp_2.raw = hw.mcu.adc_scale.i_uvw * (Curr_ADC_Half_Point_Ticks - (uint16_t)vres_0_motor_0_fastDataPtr[2]);
+/** [SNIPPET_GET_RSLT] */
+    /* For 3-shunt typically three phase currents U/V/W are being measured: */
+    sensor_iface.i_samp_0.raw = -hw.mcu.adc_scale.i_uvw * (int16_t)vres_0_motor_0_IUP_get_result();
+    sensor_iface.i_samp_1.raw = -hw.mcu.adc_scale.i_uvw * (int16_t)vres_0_motor_0_IVP_get_result();
+    sensor_iface.i_samp_2.raw = -hw.mcu.adc_scale.i_uvw * (int16_t)vres_0_motor_0_IWP_get_result();
+/** [SNIPPET_GET_RSLT] */
 
     STATE_MACHINE_RunISR0();
 
-    uint32_t pwm_u_cc = (uint32_t)(hw.mcu.pwm.duty_cycle_coeff * vars.d_uvw_cmd.u);
-    uint32_t pwm_v_cc = (uint32_t)(hw.mcu.pwm.duty_cycle_coeff * vars.d_uvw_cmd.v);
-    uint32_t pwm_w_cc = (uint32_t)(hw.mcu.pwm.duty_cycle_coeff * vars.d_uvw_cmd.w);
-
-    Cy_TCPWM_PWM_SetCompare0BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[0].idx, pwm_u_cc);
-    Cy_TCPWM_PWM_SetCompare1BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[0].idx, pwm_u_cc);
-    Cy_TCPWM_PWM_SetCompare0BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[1].idx, pwm_v_cc);
-    Cy_TCPWM_PWM_SetCompare1BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[1].idx, pwm_v_cc);
-    Cy_TCPWM_PWM_SetCompare0BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[2].idx, pwm_w_cc);
-    Cy_TCPWM_PWM_SetCompare1BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[2].idx, pwm_w_cc);
+/** [SNIPPET_MOD_UPD] */
+    vres_0_motor_0_mod_U_set((uint16_t)(hw.mcu.pwm.duty_cycle_coeff * vars.d_uvw_cmd.u)); /* Only compare0 value for the PWM symmetric mode */
+    vres_0_motor_0_mod_V_set((uint16_t)(hw.mcu.pwm.duty_cycle_coeff * vars.d_uvw_cmd.v));
+    vres_0_motor_0_mod_W_set((uint16_t)(hw.mcu.pwm.duty_cycle_coeff * vars.d_uvw_cmd.w));
+    vres_0_motor_0_mod_update();
+/** [SNIPPET_MOD_UPD] */
 
     ProbeScope_Sampling();
 }
 
 void vres_0_motor_0_slow_callback()
 {
-    //Cy_HPPASS_SetFwTrigger(CY_HPPASS_TRIG_1_MSK);/*Firmware trigger for ADC Group-1*/
-    sensor_iface.v_dc.raw = hw.mcu.adc_scale.v_dc * (uint16_t)Cy_HPPASS_SAR_Result_ChannelRead(CY_HPPASS_SAR_CHAN_4_IDX);
-    sensor_iface.pot.raw = hw.mcu.adc_scale.v_pot * (uint16_t)Cy_HPPASS_SAR_Result_ChannelRead(CY_HPPASS_SAR_CHAN_12_IDX);
+    sensor_iface.v_dc.raw = hw.mcu.adc_scale.v_dc * (uint16_t)vres_0_motor_0_VBUS_get_result();
+    sensor_iface.pot.raw = hw.mcu.adc_scale.v_pot * (uint16_t)vres_0_motor_0_SPEED_AN_get_result();
     sensor_iface.temp_ps.raw = MCU_TempSensorCalc();
 
    // using simple gate drivers
@@ -211,7 +207,6 @@ void MCU_GateDriverExitHighZ()
 void MCU_Init()
 {
     MCU_InitChipInfo();
-    init_cycfg_mcdi();
     MCU_InitADCs();
     MCU_InitTimers();
     ProbeScope_Init((uint32_t)params.sys.samp.fs0);
@@ -239,8 +234,6 @@ void MCU_InitADCs()
 #else // passive NTC
     hw.mcu.adc_scale.temp_ps = 1.0f / (1<<12U); // [1/ticks], normalized voltage wrt Vcc
 #endif
-
-    Cy_HPPASS_AC_Start(0U, 1000U); /*Start HPPASS*/
 }
 
 void MCU_InitTimers()
@@ -248,7 +241,6 @@ void MCU_InitTimers()
     mtb_mcdi_init(&vres_0_motor_0_cfg);
     // Clock frequencies .......................................................
     hw.mcu.clk.tcpwm = Cy_SysClk_PeriPclkGetFrequency((en_clk_dst_t)CLK_TCPWM_GRP_NUM, CY_SYSCLK_DIV_8_BIT, CLK_TCPWM_NUM); // [Hz]
-    //hw.mcu.clk.hall = Cy_SysClk_PeriPclkGetFrequency((en_clk_dst_t)CLK_HALL_GRP_NUM, CY_SYSCLK_DIV_8_BIT, CLK_HALL_NUM); // [Hz]
 
     // Timer calculations ......................................................
     hw.mcu.pwm.period = ((uint32_t)(hw.mcu.clk.tcpwm * params.sys.samp.tpwm))&(~((uint32_t)(0x1))); // must be even
@@ -259,31 +251,31 @@ void MCU_InitTimers()
     // Configure timers (TCPWMs) .....................................
     uint32_t cc0 = (hw.mcu.pwm.period >> 1);
 
-    Cy_TCPWM_PWM_SetPeriod0(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.tmr[0].idx, hw.mcu.isr0.period - 1U); // Sawtooth carrier
-    Cy_TCPWM_PWM_SetPeriod0(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.tmr[1].idx, hw.mcu.isr0.period - 1U); // Sawtooth carrier
+    Cy_TCPWM_PWM_SetPeriod0(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[MTB_MCDI_TMR_FAST].idx, hw.mcu.isr0.period - 1U); // Sawtooth carrier
+    Cy_TCPWM_PWM_SetPeriod0(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.tmr[MTB_MCDI_TMR_SYNC].idx, hw.mcu.isr0.period - 1U); // Sawtooth carrier
 
-    Cy_TCPWM_PWM_SetCompare0Val(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.tmr[1].idx, cc0); // Read ADCs at the middle of lower switches' on-times
-    Cy_TCPWM_PWM_SetCompare0BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.tmr[1].idx, cc0); // Read ADCs at the middle of lower switches' on-times
+    Cy_TCPWM_PWM_SetCompare0Val(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.tmr[MTB_MCDI_TMR_SYNC].idx, cc0); // Read ADCs at the middle of lower switches' on-times
+    Cy_TCPWM_PWM_SetCompare0BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.tmr[MTB_MCDI_TMR_SYNC].idx, cc0); // Read ADCs at the middle of lower switches' on-times
 
-    Cy_TCPWM_PWM_SetPeriod0(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[0].idx, hw.mcu.pwm.period >> 1); // Triangle carrier
-    Cy_TCPWM_PWM_SetCompare0Val(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[0].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
-    Cy_TCPWM_PWM_SetCompare1Val(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[0].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
-    Cy_TCPWM_PWM_SetCompare0BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[0].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
-    Cy_TCPWM_PWM_SetCompare1BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[0].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
+    Cy_TCPWM_PWM_SetPeriod0(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[MTB_MCDI_PWM_U].idx, hw.mcu.pwm.period >> 1); // Triangle carrier
+    Cy_TCPWM_PWM_SetCompare0Val(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[MTB_MCDI_PWM_U].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
+    Cy_TCPWM_PWM_SetCompare1Val(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[MTB_MCDI_PWM_U].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
+    Cy_TCPWM_PWM_SetCompare0BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[MTB_MCDI_PWM_U].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
+    Cy_TCPWM_PWM_SetCompare1BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[MTB_MCDI_PWM_U].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
 
-    Cy_TCPWM_PWM_SetPeriod0(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[1].idx, hw.mcu.pwm.period >> 1); // Triangle carrier
-    Cy_TCPWM_PWM_SetCompare0Val(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[1].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
-    Cy_TCPWM_PWM_SetCompare1Val(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[1].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
-    Cy_TCPWM_PWM_SetCompare0BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[1].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
-    Cy_TCPWM_PWM_SetCompare1BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[1].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
+    Cy_TCPWM_PWM_SetPeriod0(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[MTB_MCDI_PWM_V].idx, hw.mcu.pwm.period >> 1); // Triangle carrier
+    Cy_TCPWM_PWM_SetCompare0Val(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[MTB_MCDI_PWM_V].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
+    Cy_TCPWM_PWM_SetCompare1Val(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[MTB_MCDI_PWM_V].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
+    Cy_TCPWM_PWM_SetCompare0BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[MTB_MCDI_PWM_V].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
+    Cy_TCPWM_PWM_SetCompare1BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[MTB_MCDI_PWM_V].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
 
-    Cy_TCPWM_PWM_SetPeriod0(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[2].idx, hw.mcu.pwm.period >> 1); // Triangle carrier
-    Cy_TCPWM_PWM_SetCompare0Val(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[2].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
-    Cy_TCPWM_PWM_SetCompare1Val(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[2].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
-    Cy_TCPWM_PWM_SetCompare0BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[2].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
-    Cy_TCPWM_PWM_SetCompare1BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[2].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
+    Cy_TCPWM_PWM_SetPeriod0(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[MTB_MCDI_PWM_W].idx, hw.mcu.pwm.period >> 1); // Triangle carrier
+    Cy_TCPWM_PWM_SetCompare0Val(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[MTB_MCDI_PWM_W].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
+    Cy_TCPWM_PWM_SetCompare1Val(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[MTB_MCDI_PWM_W].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
+    Cy_TCPWM_PWM_SetCompare0BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[MTB_MCDI_PWM_W].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
+    Cy_TCPWM_PWM_SetCompare1BufVal(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.pwm[MTB_MCDI_PWM_W].idx, hw.mcu.pwm.period >> 2); // Start with duty cycle = 50%
 
-    Cy_TCPWM_PWM_SetPeriod0(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.tmr[2].idx, hw.mcu.isr1.period - 1U); // Sawtooth carrier
+    Cy_TCPWM_PWM_SetPeriod0(vres_0_motor_0_cfg.tcpwmBase, vres_0_motor_0_cfg.tmr[MTB_MCDI_TMR_SLOW].idx, hw.mcu.isr1.period - 1U); // Sawtooth carrier
 }
 
 
@@ -292,17 +284,15 @@ void MCU_StartPeripherals()
     MCU_EnterCriticalSection(); // No ISRs beyond this point
 
     mtb_mcdi_enable(&vres_0_motor_0_cfg);
+    pass_0_start();
     mtb_mcdi_start(&vres_0_motor_0_cfg);
-
     MCU_ExitCriticalSection();
 }
 
 void MCU_StopPeripherals()
 {
     MCU_EnterCriticalSection(); // No ISRs beyond this point
-
     mtb_mcdi_disable(&vres_0_motor_0_cfg);
-
     MCU_ExitCriticalSection();
 }
 

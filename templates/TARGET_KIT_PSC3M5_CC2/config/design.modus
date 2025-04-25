@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Configuration app="BACKEND" formatVersion="14" lastSavedWith="Configurator Backend" lastSavedWithVersion="3.30.0" toolsPackage="ModusToolbox 3.3.0" xmlns="http://cypress.com/xsd/cydesignfile_v5">
+<Configuration app="BACKEND" formatVersion="14" lastSavedWith="Configurator Backend" lastSavedWithVersion="3.50.0" toolsPackage="ModusToolbox 3.5.0" xmlns="http://cypress.com/xsd/cydesignfile_v5">
     <Devices>
         <Device mpn="PSC3M5FDS2AFQ1">
             <BlockConfig>
@@ -143,6 +143,7 @@
                     <Parameters>
                         <Param id="DriveModes" value="CY_GPIO_DM_ANALOG"/>
                         <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
                         <Param id="inFlash" value="true"/>
                         <Param id="initialState" value="1"/>
                         <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
@@ -162,6 +163,7 @@
                     <Parameters>
                         <Param id="DriveModes" value="CY_GPIO_DM_ANALOG"/>
                         <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
                         <Param id="inFlash" value="true"/>
                         <Param id="initialState" value="1"/>
                         <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
@@ -181,6 +183,7 @@
                     <Parameters>
                         <Param id="DriveModes" value="CY_GPIO_DM_PULLDOWN"/>
                         <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
                         <Param id="inFlash" value="true"/>
                         <Param id="initialState" value="1"/>
                         <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
@@ -200,6 +203,7 @@
                     <Parameters>
                         <Param id="DriveModes" value="CY_GPIO_DM_PULLUP"/>
                         <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
                         <Param id="inFlash" value="true"/>
                         <Param id="initialState" value="1"/>
                         <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
@@ -219,6 +223,7 @@
                     <Parameters>
                         <Param id="DriveModes" value="CY_GPIO_DM_STRONG_IN_OFF"/>
                         <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
                         <Param id="inFlash" value="true"/>
                         <Param id="initialState" value="0"/>
                         <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
@@ -238,6 +243,7 @@
                     <Parameters>
                         <Param id="DriveModes" value="CY_GPIO_DM_STRONG_IN_OFF"/>
                         <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
                         <Param id="inFlash" value="true"/>
                         <Param id="initialState" value="0"/>
                         <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
@@ -257,6 +263,7 @@
                     <Parameters>
                         <Param id="DriveModes" value="CY_GPIO_DM_STRONG_IN_OFF"/>
                         <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
                         <Param id="inFlash" value="true"/>
                         <Param id="initialState" value="0"/>
                         <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
@@ -276,6 +283,7 @@
                     <Parameters>
                         <Param id="DriveModes" value="CY_GPIO_DM_STRONG_IN_OFF"/>
                         <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
                         <Param id="inFlash" value="true"/>
                         <Param id="initialState" value="0"/>
                         <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
@@ -295,6 +303,7 @@
                     <Parameters>
                         <Param id="DriveModes" value="CY_GPIO_DM_STRONG_IN_OFF"/>
                         <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
                         <Param id="inFlash" value="true"/>
                         <Param id="initialState" value="0"/>
                         <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
@@ -314,6 +323,7 @@
                     <Parameters>
                         <Param id="DriveModes" value="CY_GPIO_DM_STRONG_IN_OFF"/>
                         <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
                         <Param id="inFlash" value="true"/>
                         <Param id="initialState" value="0"/>
                         <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
@@ -334,6 +344,7 @@
                     <Parameters>
                         <Param id="DriveModes" value="CY_GPIO_DM_HIGHZ"/>
                         <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
                         <Param id="inFlash" value="true"/>
                         <Param id="initialState" value="1"/>
                         <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
@@ -353,6 +364,7 @@
                     <Parameters>
                         <Param id="DriveModes" value="CY_GPIO_DM_HIGHZ"/>
                         <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
                         <Param id="inFlash" value="true"/>
                         <Param id="initialState" value="1"/>
                         <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
@@ -374,6 +386,7 @@
                     <Parameters>
                         <Param id="DriveModes" value="CY_GPIO_DM_STRONG_IN_OFF"/>
                         <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
                         <Param id="inFlash" value="true"/>
                         <Param id="initialState" value="0"/>
                         <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
@@ -394,6 +407,7 @@
                     <Parameters>
                         <Param id="DriveModes" value="CY_GPIO_DM_STRONG_IN_OFF"/>
                         <Param id="driveStrength" value="CY_GPIO_DRIVE_1_2"/>
+                        <Param id="driveStrengthTrim" value="CY_GPIO_DRIVE_STRENGTH_DEFAULT"/>
                         <Param id="inFlash" value="true"/>
                         <Param id="initialState" value="0"/>
                         <Param id="isrTrigger" value="CY_GPIO_INTR_DISABLE"/>
@@ -686,21 +700,42 @@
                         <Param id="vddio1Mv" value="3300"/>
                     </Parameters>
                 </Personality>
-                <Personality template="3shunt" version="1.0">
+                <Personality template="3shunt" version="2.0">
                     <Block location="vres[0].motor[0]" locked="true"/>
                     <Parameters>
                         <Param id="Duty_Dithering" value="128"/>
                         <Param id="Period_Dithering" value="128"/>
-                        <Param id="alignment" value="CY_TCPWM_PWM_CENTER_ASYMMETRIC_CC0_CC1_ALIGN"/>
+                        <Param id="alignment" value="CY_TCPWM_PWM_CENTER_ALIGN"/>
                         <Param id="buff_line_out_source" value="CY_TCPWM_OUTPUT_PWM_SIGNAL"/>
                         <Param id="buff_linecompl_out_source" value="CY_TCPWM_OUTPUT_INVERTED_PWM_SIGNAL"/>
                         <Param id="chan0#chan0" value="pass[0].sar[0].ch[0]"/>
+                        <Param id="chan0#sign" value="true"/>
                         <Param id="chan1#chan1" value="pass[0].sar[0].ch[1]"/>
+                        <Param id="chan1#sign" value="true"/>
                         <Param id="chan2#chan2" value="pass[0].sar[0].ch[2]"/>
+                        <Param id="chan2#sign" value="true"/>
                         <Param id="chan3#chan3" value="pass[0].sar[0].ch[4]"/>
+                        <Param id="chan3#sign" value="false"/>
                         <Param id="chan4#chan4" value="pass[0].sar[0].ch[12]"/>
+                        <Param id="chan4#sign" value="false"/>
                         <Param id="chan5#chan5" value="pass[0].sar[0].ch[20]"/>
+                        <Param id="chan5#sign" value="false"/>
+                        <Param id="chanCnt" value="6"/>
+                        <Param id="chanName0" value="IUP"/>
+                        <Param id="chanName1" value="IVP"/>
+                        <Param id="chanName2" value="IWP"/>
+                        <Param id="chanName3" value="VBUS"/>
+                        <Param id="chanName4" value="SPEED_AN"/>
+                        <Param id="chanName5" value="T_POWER"/>
                         <Param id="convPointUs" value="25.000"/>
+                        <Param id="convPrio0" value="HIGH"/>
+                        <Param id="convPrio1" value="HIGH"/>
+                        <Param id="convPrio2" value="HIGH"/>
+                        <Param id="convPrio3" value="LOW"/>
+                        <Param id="convPrio4" value="LOW"/>
+                        <Param id="convPrio5" value="LOW"/>
+                        <Param id="debug" value="false"/>
+                        <Param id="driverOutEnabled" value="true"/>
                         <Param id="dutyCycle" value="50"/>
                         <Param id="enable#enable" value="ioss[0].port[0].pin[0]"/>
                         <Param id="enable#initialState" value="1"/>
@@ -708,11 +743,11 @@
                         <Param id="fDeadNs" value="500"/>
                         <Param id="fastCbName" value="vres_0_motor_0_fast_callback"/>
                         <Param id="fastDiv" value="1"/>
-                        <Param id="fastPointer" value="vres_0_motor_0_fastDataPtr"/>
                         <Param id="fastPrio" value="0"/>
                         <Param id="fastTimer#fastTimer" value="tcpwm[0].group[1].cnt[4]"/>
                         <Param id="gf_depth" value="CY_GLITCH_FILTER_DEPTH_SUPPORT_VALUE_0"/>
                         <Param id="hiInv" value="false"/>
+                        <Param id="iDma" value="false"/>
                         <Param id="inFlash" value="true"/>
                         <Param id="init" value="false"/>
                         <Param id="killInputEnabled" value="false"/>
@@ -721,6 +756,7 @@
                         <Param id="line_out_source" value="CY_TCPWM_OUTPUT_PWM_SIGNAL"/>
                         <Param id="linecompl_out_source" value="CY_TCPWM_OUTPUT_INVERTED_PWM_SIGNAL"/>
                         <Param id="loInv" value="false"/>
+                        <Param id="oDma" value="false"/>
                         <Param id="pasOut" value="CY_TCPWM_PWM_OUTPUT_LOW"/>
                         <Param id="pwm0#pwm0" value="tcpwm[0].group[1].cnt[0]"/>
                         <Param id="pwm1#pwm1" value="tcpwm[0].group[1].cnt[1]"/>
@@ -735,8 +771,8 @@
                         <Param id="slowPrio" value="1"/>
                         <Param id="slowTimer#slowTimer" value="tcpwm[0].group[0].cnt[0]"/>
                         <Param id="swFreq" value="20000"/>
+                        <Param id="swapPointUs" value="25.000"/>
                         <Param id="syncTimer#syncTimer" value="tcpwm[0].group[1].cnt[3]"/>
-                        <Param id="syncTimer#updatePointUs" value="25.000"/>
                     </Parameters>
                     <Personality template="slowTimer">
                         <Block location="tcpwm[0].group[0].cnt[0]" locked="true"/>
