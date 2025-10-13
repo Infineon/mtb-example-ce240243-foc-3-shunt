@@ -1,13 +1,5 @@
-/******************************************************************************
-* File Name:   pmsm_foc_KIT_MOTOR_DC_250W_24V.h
-*
-* Description: This file include 250w 24v power board configurations.
-*
-* Related Document: See README.md
-*
-*
-*******************************************************************************
-* Copyright 2024-2025, Cypress Semiconductor Corporation (an Infineon company) or
+/*******************************************************************************
+* Copyright 2021-2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -38,11 +30,8 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
-#ifndef INVERTER_CARD_PMSM_FOC_KIT_MOTOR_DC_250W_24V_H_
-#define INVERTER_CARD_PMSM_FOC_KIT_MOTOR_DC_250W_24V_H_
+#pragma once
+#include "MCU.h"  // microcontroller
 
+void HW_IFACE_ConnectFcnPointers(void);
 
-
-
-
-#endif /* INVERTER_CARD_PMSM_FOC_KIT_MOTOR_DC_250W_24V_H_ */

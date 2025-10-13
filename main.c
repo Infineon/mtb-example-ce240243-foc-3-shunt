@@ -1,13 +1,15 @@
 /******************************************************************************
 * File Name:   main.c
 *
-* Description: This code example demonstrates the implementation of PMSM sensorless 
-* 3 shunt field-oriented control (FOC) using the Infineon's PSOC Control C3 MCU.
+* Description: This code example demonstrates sensorless 3-shunt Field-Oriented 
+* Control (FOC) for a Permanent Magnet Synchronous Motor (PMSM) using Infineon’s 
+* PSOC™ Control C3 MCU. The MCDI solution personality is employed for core 
+* peripheral configurations.
 *
 * Related Document: See README.md
 *
 *******************************************************************************
-* Copyright 2024-2025, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related

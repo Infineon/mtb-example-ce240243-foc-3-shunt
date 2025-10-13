@@ -1,13 +1,5 @@
-/******************************************************************************
-* File Name:   MotorCtrlHWConfig.h
-*
-* Description: Motor control hardware configuration header file.
-*
-* Related Document: See README.md
-*
-*
-*******************************************************************************
-* Copyright 2024-2025, Cypress Semiconductor Corporation (an Infineon company) or
+/*******************************************************************************
+* Copyright 2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -38,18 +30,22 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
+#include "General.h"
 
+/* Temperature sensor configurations */
+#define ACTIVE_TEMP_SENSOR           false        // Active IC (e.g. MCP9700T-E/TT) vs Passive NTC (e.g. NCP18WF104J03RB)
+#if (ACTIVE_TEMP_SENSOR)
+#define TEMP_SENSOR_1D_MV  (10.0f)  //mV
+#define TEMP_SENSOR_0D_MV  (-400.0f) //mV
+#define TEMP_SENSOR_SCALE  ((TEMP_SENSOR_1D_MV * (1 << 12U))/(ADC_VREF_GAIN * CY_CFG_PWR_VDDA_MV))
+#define TEMP_SENSOR_OFFSET ((TEMP_SENSOR_SCALE/TEMP_SENSOR_1D_MV)*TEMP_SENSOR_0D_MV) 
+#endif
+extern  TEMP_SENS_LUT_t     Temp_Sens_LUT;
 
 /* PWM configurations*/
-#define PWM_TRIG_ADVANCE    0U        // [ticks]
-/* Miscellaneous BSP definitions */
-#define KIT_ID                (0x0009UL)    // For GUI's recognition of HW
-/* ADC configurations*/
-#define ADC_VREF_GAIN        ((5.0f)/(3.3f))         // [V/V], voltage-reference buffer gain (e.g. scaling 5.0V down to 3.3V)
-#define ADC_CS_OPAMP_GAIN   (12.0f)                 // [V/V]
-#define ADC_CS_SETTLE_RATIO    (0.8f)                    // [], settling ratio used for single-shunt current sampling
-#define ADC_SCALE_VUVW      ((5.6f)/(56.0f+5.6f))   // [V/V] = [Ohm/Ohm]
-#define ADC_SCALE_VDC       ((5.6f)/(56.0f+5.6f))   // [V/V] = [Ohm/Ohm]
+#define PWM_INVERSION                (false)
+#define PWM_TRIG_ADVANCE             (0U)          // [ticks]
 
-#define ADC_CS_SHUNT_RES    (10.0E-3f)                // [Ohm], cs shunt-resistor value, default
+/* Miscellaneous BSP definitions */
+#define KIT_ID                       (0x000DUL)    // For GUI's recognition of HW
 

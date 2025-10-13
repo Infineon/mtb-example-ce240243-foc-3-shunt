@@ -39,12 +39,14 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
+#pragma once
 #include "cybsp.h"
 #include "cy_em_eeprom.h"
+#include "MotorCtrlHWConfig.h"
 #include "Controller.h"
 
-extern  TEMP_SENS_LUT_t     Temp_Sens_LUT;
-#define ACTIVE_TEMP_SENSOR  false        // Active IC (e.g. MCP9700T-E/TT) vs Passive NTC (e.g. NCP18WF104J03RB)
+/* EEPROM storage Emulated EEPROM flash. */
+extern const uint8_t *Em_Eeprom_Storage[MOTOR_CTRL_NO_OF_MOTOR];
 
 typedef struct
 {
@@ -94,7 +96,7 @@ typedef struct
 
 typedef struct
 {
-    IRQn_Type nvic_sync_isr0;
+    IRQn_Type nvic_adc0_isr0;
     IRQn_Type nvic_dma_adc_1;
     IRQn_Type nvic_dma_adc_2;
     IRQn_Type nvic_sync_isr1;
@@ -121,51 +123,38 @@ typedef struct
     MCU_ADC_MUX_t adc_mux;
 } MCU_t;
 
+extern MCU_t mcu[MOTOR_CTRL_NO_OF_MOTOR];
+
 // Initializations
-void MCU_Init();
-void MCU_InitChipInfo();
-void MCU_InitInterrupts();
-void MCU_InitADCs();
-void MCU_InitTimers();
-
-// FLash read/write
-void MCU_FlashInit();
-bool MCU_FlashReadParams(PARAMS_ID_t id, PARAMS_t *ram_data);
-bool MCU_FlashWriteParams(PARAMS_t *ram_data);
-
-// High-Z enter
-void MCU_GateDriverEnterHighZ();
-void MCU_PhaseUEnterHighZ();
-void MCU_PhaseVEnterHighZ();
-void MCU_PhaseWEnterHighZ();
-
-// High-Z exit
-void MCU_GateDriverExitHighZ();
-void MCU_PhaseUExitHighZ();
-void MCU_PhaseVExitHighZ();
-void MCU_PhaseWExitHighZ();
-
+void MCU_Init(uint8_t motor_id);
 
 // Critical section
-void MCU_EnterCriticalSection();
-void MCU_ExitCriticalSection();
+void MCU_EnterCriticalSection(void);
+void MCU_ExitCriticalSection(void);
+
+// High-Z enter/exit
+void MCU_GateDriverEnterHighZ(uint8_t motor_id);
+void MCU_GateDriverExitHighZ(uint8_t motor_id);
+
+// FLash read/write
+bool MCU_FlashRead(uint8_t motor_id, PARAMS_ID_t id, PARAMS_t *ram_data);
+bool MCU_FlashWrite(uint8_t motor_id, PARAMS_t *ram_data);
+
 
 // Start/stop PWMs, ADCs, DMA, ISRs
-void MCU_StartPeripherals();
-void MCU_StopPeripherals();
-
-// Handling execution time capture measurements
-void MCU_StartTimeCap(MCU_TIME_CAP_t *time_cap);
-void MCU_StopTimeCap(MCU_TIME_CAP_t *time_cap);
-void MCU_ProcessTimeCapISR1(MCU_TIME_CAP_t *time_cap);
+void MCU_StartPeripherals(uint8_t motor_id);
+void MCU_StopPeripherals(uint8_t motor_id);
 
 // Indicating whether phase voltages are currently being sampled
-bool MCU_ArePhaseVoltagesMeasured();
-
-// Temperature sensor calculations
-float MCU_TempSensorCalc();
+bool MCU_ArePhaseVoltagesMeasured(uint8_t motor_id);
 
 // Time-ciritcal control interrupts
-void MCU_RunISR0(); // Fast, highest priority
-void MCU_RunISR1(); // Slow, second highest priority
+void MCU_RunISR0(void); // Fast, highest priority
+void MCU_RunISR1(void); // Slow, second highest priority
 
+#if defined (EXE_TIMER_ENABLED)
+// Handling execution time capture measurements
+void MCU_StartTimeCap(MCU_TIME_CAP_t *time_cap);       
+void MCU_StopTimeCap(MCU_TIME_CAP_t *time_cap);        
+void MCU_ProcessTimeCapISR1(MCU_TIME_CAP_t *time_cap); 
+#endif

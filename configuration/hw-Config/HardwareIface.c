@@ -1,13 +1,5 @@
-/******************************************************************************
-* File Name:   pmsm_foc_motor_NANOTEC_MOTOR_DB42S03.h
-*
-* Description: This file include NANOTECH MOTOR (DB42S03) configurations.
-*
-* Related Document: See README.md
-*
-*
-*******************************************************************************
-* Copyright 2024-2025, Cypress Semiconductor Corporation (an Infineon company) or
+/*******************************************************************************
+* Copyright 2021-2024, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -38,35 +30,21 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
+#include "HardwareIface.h"
 
-#ifndef PMSM_FOC_MOTOR_NANOTEC_MOTOR_DB42S03_H_
-#define PMSM_FOC_MOTOR_NANOTEC_MOTOR_DB42S03_H_
+// Connecting HW-agnostic function pointers to their corresponding HW-dependent functions
+void HW_IFACE_ConnectFcnPointers(void)
+{
 
+    hw_fcn.HardwareIfaceInit        = MCU_Init;   /* used in FCN, state machine init*/
+    hw_fcn.EnterCriticalSection     = MCU_EnterCriticalSection;
+    hw_fcn.ExitCriticalSection      = MCU_ExitCriticalSection;
+    hw_fcn.GateDriverEnterHighZ     = MCU_GateDriverEnterHighZ; /*Used in Profiler, State Machine*/
+    hw_fcn.GateDriverExitHighZ      = MCU_GateDriverExitHighZ;
+    hw_fcn.StartPeripherals         = MCU_StartPeripherals;
+    hw_fcn.StopPeripherals          = MCU_StopPeripherals;
+    hw_fcn.FlashRead                = MCU_FlashRead;
+    hw_fcn.FlashWrite               = MCU_FlashWrite;
+    hw_fcn.ArePhaseVoltagesMeasured = MCU_ArePhaseVoltagesMeasured;
 
-#define VOLTAGE      (24.0f)       // Rated Voltage
-#define N_SPEED      (4000.0f)     // nominal speed [RPM]
-#define MAX_SPEED    (6200.0f)     // maximum no load speed [RPM]
-#define POLE         (8.0f)        // number of pole
-#define LD           (1.196E-3f)   // q-axis inductance [H]
-#define LQ           (1.196E-3f)   // d-axis inductance [H]
-#define I_AM         (5.0E-3f)     // permanent magnet's flux linkage [Wb]
-#define R            (843.0E-3f)   // stator resistance [Ohm]
-#define T_MAX        (0.19f)       // maximum torque [Nm]
-#define I_PEAK       (5.40f)       // peak current rating [A]
-#define I_CONST      (1.79f)       // continuous current rating [A]
-#define ID_MAX       (0.75f)       // maximum demagnetization current [A]
-#define MTPV_MARGIN  (0.90f)       // [%]
-#define THERM_TAU    (2.0f)        // [sec]
-#define ON_LEVEL     (1.00f)       // [%]
-#define OFF_LEVEL    (0.95f)       // [%]
-
-/* Parameter related to motor as well as mechanical load */
-#define MECH_INERTIA    (2.7E-6f)    // [kg.m^2]
-#define MECH_VISCOUS    (3.7E-6f)    // [kg.m^2/sec]
-#define MECH_FRICTION   (1.5E-3f)    // [kg.m^2/sec^2]
-
-#define VOLT_VMIN       (0.56f)    // [Vpk]
-#define VOLT_VF_RATIO   (5.0E-3f)    // [Vpk/(Ra/sec-elec)]
-
-
-#endif /* PMSM_FOC_MOTOR_NANOTEC_MOTOR_DB42S03_H_ */
+}

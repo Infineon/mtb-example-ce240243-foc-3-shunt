@@ -1,14 +1,6 @@
-/******************************************************************************
-* File Name:   HardwareIface.h
-*
-* Description: Hardware interface header file. 
-*
-* Related Document: See README.md
-*
-*
-*******************************************************************************
-* Copyright 2024-2025, Cypress Semiconductor Corporation (an Infineon company) or
-* an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
+/*******************************************************************************
+* Copyright 2021-2024, Cypress Semiconductor Corporation (an Infineon company) or
+* an affiliate of Cypress Semiconductor Corporation.    All rights reserved.
 *
 * This software, including source code, documentation and related
 * materials ("Software") is owned by Cypress Semiconductor Corporation
@@ -21,7 +13,7 @@
 * If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
 * non-transferable license to copy, modify, and compile the Software
 * source code solely for use in connection with Cypress's
-* integrated circuit products.  Any reproduction, modification, translation,
+* integrated circuit products.    Any reproduction, modification, translation,
 * compilation, or representation of this Software except as specified
 * above is prohibited without the express written permission of Cypress.
 *
@@ -38,21 +30,23 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
-
-
-#pragma once
-
-#include "cybsp.h"
 #include "MCU.h"
+#include "ParamConfig.h"
 
-typedef struct
-{
-    MCU_t mcu;
+const uint8_t *Em_Eeprom_Storage[MOTOR_CTRL_NO_OF_MOTOR] = {
+        (uint8_t *)(CY_FLASH_BASE + CY_FLASH_SIZE - (srss_0_eeprom_0_PHYSICAL_SIZE))
+};
 
-} HW_t;
 
-extern HW_t hw;
+TEMP_SENS_LUT_t Temp_Sens_LUT = {
+    .step     = 1.0f / (TEMP_SENS_LUT_WIDTH + 1.0f),            // [%], normalized voltage wrt Vcc
+    .step_inv = (TEMP_SENS_LUT_WIDTH + 1.0f),                   // [1/%], inverse normalized voltage
+    .val      = {
+        109.5f, 85.4f, 71.7f, 62.0f, 54.3f, 47.7f, 41.9f, 36.5f,
+        31.4f, 26.3f, 21.2f, 16.0f, 10.2f,  3.7f, -4.3f, -16.1f
+    } // [degree C]
+};
 
-void HW_IFACE_Init();
-void HW_IFACE_ConnectFcnPointers();
+/* MCU handler for peripheral configuration*/
+MCU_t mcu[MOTOR_CTRL_NO_OF_MOTOR];
 
