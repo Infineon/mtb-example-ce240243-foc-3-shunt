@@ -78,12 +78,16 @@
 
 /*********Rate Limiters*********/
 #define MOTOR_CTRL_SPEED_CMD_RATE                  (1000.0f)                    /*[RPM/sec], Speed command rate*/
+#define MOTOR_CTRL_SPEED_CMD_RATE_OPEN_LOOP        (1000.0f)                    /*[RPM/sec], Speed command rate during open loop state (Voltage OL and current OL)*/
 #if defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_TBC)
 #define MOTOR_CTRL_CURRENT_CMD_RATE                (10.0f*MOTOR_CURRENT_PEAK)   /*[A/sec], Current command rate*/
 #elif defined(CTRL_METHOD_SFO)
 #define MOTOR_CTRL_TORQUE_CMD_RATE                 (10.0f*MOTOR_TORQUE_MAX)     /*[Nm/sec], Torque command rate*/
 #endif
 
+#if defined(CTRL_METHOD_RFO)
+#define MOTOR_CTRL_POSITION_CMD_RATE               (180.0f)                     /*[Deg/sec], Position command rate*/
+#endif
 /*********Faults*********/
 #define MOTOR_CTRL_OVER_CURRENT_THRESH             (120.0f)                     /*[%], over current fault threshold, percentage of motor continuous current*/
 #define MOTOR_CTRL_VDC_DEBOUNCE_TIME               (0.3f)                      /*[sec], VDC fault detection debouncing time*/
@@ -100,7 +104,9 @@
 #elif defined(CTRL_METHOD_SFO)
 #define MOTOR_CTRL_COMMAND_MAX_TORQUE              (MOTOR_TORQUE_MAX*0.5f)      /*[Nm], Maximum troque command*/
 #endif
-
+#if defined(CTRL_METHOD_RFO)
+#define MOTOR_CTRL_COMMAND_MAX_POSITION             (360.f)                       /*[deg], maximum current command*/
+#endif
 /*******Feedback*******/
 /*********Hall Sensor*********/
 #define MOTOR_CTRL_HALL_ANGLE_OFFSET               (0.0f)                       /*[deg], Hall angle offset*/
@@ -135,6 +141,7 @@
 #define MOTOR_CTRL_SPEED_BW                        (5.0f)                      /*[Hz], Speed loop bandwidth*/ //(15.0f)
 #define MOTOR_CTRL_SPEED_OL_CL_TR_COEFF            (100.0f)                     /*[%], Open-loop to closed-loop transition coefficient*/
 #define MOTOR_CTRL_SPEED_KI_MULTIPLE               (10.0f)                      /*[], Ki multiple for speed looop*/
+#define MOTOR_CTRL_SPEED_FF_COEFF                  (100.0f)                       /*[%], Speed loop feed-forward coefficient*/ 
 
 #if defined(CTRL_METHOD_TBC)    
 #define MOTOR_CTRL_CURRENT_BYPASS                   (false)                     /* Current Control bypass switch*/
@@ -145,6 +152,7 @@
 #define MOTOR_CTRL_CURRENT_BW                      (750.0f)                      /*[Hz], Current loop bandwidth*/
 #define MOTOR_CTRL_CURRENT_FF_COEFF                (100.0f)                      /*[%], Current loop feed-forward coefficient*/
 #define MOTOR_CTRL_CURRENT_STARTUP_THRESH          (MOTOR_CURRENT_CONT*0.15f)    /*[A], Current control startup threshold*/
+#define MOTOR_CTRL_CURRENT_OPEN_LOOP_CMD           (MOTOR_CURRENT_CONT*0.4f)      /*[A], Current control open loop command value*/
 
 #elif defined(CTRL_METHOD_SFO)
 /*********Torque Controller*********/
@@ -165,6 +173,13 @@
 #define MOTOR_CTRL_BW_MUL_LS_THRESH                (150.0f)                      /*[Hz], Bandwidth multiplier low speed threshold*/
 #define MOTOR_CTRL_BW_MUL_HS_THRESH                (300.0f)                      /*[Hz], Bandwidth multiplier high speed threshold*/
 #define MOTOR_CTRL_LOAD_POLE_SEP_RATIO             (1.01f)                      /*[], Pole separation ration*/
+#endif
+
+#if defined(CTRL_METHOD_RFO)
+#define MOTOR_CTRL_POSITION_BW                     (5.0f)                       /*[Hz], Position loop bandwidth*/  
+#define MOTOR_CTRL_POSITION_POLE_SEP_RATIO         (1.001f)                     /*[#], Pole separation ration*/
+#define MOTOR_CTRL_POSITION_FF_COEFF               (100.0f)                     /*[%], Position loop feed-forward coefficient*/ 
+#define MOTOR_CTRL_POSITION_PI_LIMIT               (1000.0f)                   /*[RPM], Position PI  output limit*/
 #endif
 
 /*********Voltage Controller*********/
@@ -202,10 +217,11 @@
 /*********Six-Pulse Injection*********/
 #define MOTOR_CTRL_SIX_PULSE_INJ_MAX_CURRENT       (3.5f)                        /*[A}, Maximum current during  six pulse injection*/
 
-/*********Flux Weakening*********/
+/*********High Frequency Injection*********/
+#define MOTOR_CTRL_HFI_TYPE                        (Sine_Wave)                   /*[], Type: sine-wave or square-wave*/
+#define MOTOR_CTRL_HFI_MAX_CURRENT                 (1.75f)                       /*[A], Maximum excitation current d-axis*/
 #define MOTOR_CTRL_HFI_INJECT_FREQ                 (1500.0f)                     /*[Hz], Injection Frequency*/
 #define MOTOR_CTRL_HFI_SEPARATION_FREQ             (150.0f)                      /*[Hz], Separation frequency*/
-#define MOTOR_CTRL_HFI_MAX_CURRENT                 (1.75f)                       /*[A], Maximum excitation current d-axis*/
 #endif
 /*******************************************************************************/
 /*******DC Supply*******/

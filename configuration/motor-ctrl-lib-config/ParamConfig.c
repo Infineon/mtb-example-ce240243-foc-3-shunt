@@ -36,6 +36,8 @@
 #include "ParamConfig_Generated.h"
 #endif
 
+void PARAMS_InitManual(PARAMS_t* params_ptr);
+void PARAMS_InitAutoCalc(PARAMS_t* params_ptr);
 
 void PARAMS_Init(MOTOR_t *motor_ptr)
 {
@@ -127,10 +129,14 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     params_ptr->sys.analog.offset_null_time = 0.250f; // [sec], this will determine the loop-gain of auto-offset-nulling loop
     // Rate Limiter Parameters:
     params_ptr->sys.rate_lim.w_cmd.elec = MECH_TO_ELEC(HZ_TO_RADSEC(RPM_TO_HZ(MOTOR_CTRL_SPEED_CMD_RATE)), MOTOR_POLE); // [(Ra/sec-elec)/sec]
+    params_ptr->sys.rate_lim.w_ol_cmd.elec = MECH_TO_ELEC(HZ_TO_RADSEC(RPM_TO_HZ(MOTOR_CTRL_SPEED_CMD_RATE_OPEN_LOOP)), MOTOR_POLE); // [(Ra/sec-elec)/sec]
 #if defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_TBC)
     params_ptr->sys.rate_lim.i_cmd = MOTOR_CTRL_CURRENT_CMD_RATE; // [A/sec]
 #elif defined(CTRL_METHOD_SFO)
     params_ptr->sys.rate_lim.T_cmd =MOTOR_CTRL_TORQUE_CMD_RATE; // [Nm/sec]
+#endif
+#if defined(CTRL_METHOD_RFO)
+    params_ptr->sys.rate_lim.p_cmd =  DEG_TO_RAD(MOTOR_CTRL_POSITION_CMD_RATE);  //[Ra/sec] 
 #endif
     // Fault Parameters:
     params_ptr->sys.faults.oc_thresh = PERC_TO_NORM(MOTOR_CTRL_OVER_CURRENT_THRESH); // [%]
@@ -146,6 +152,9 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     params_ptr->sys.cmd.i_max = MOTOR_CTRL_COMMAND_MAX_CURRENT; // [A]
 #elif defined(CTRL_METHOD_SFO)
     params_ptr->sys.cmd.T_max = MOTOR_CTRL_COMMAND_MAX_TORQUE; // [Nm]
+#endif
+#if defined(CTRL_METHOD_RFO) 
+    params_ptr->sys.cmd.p_max = DEG_TO_RAD(MOTOR_CTRL_COMMAND_MAX_POSITION); // [Ra]
 #endif
     // Rest of System Parameters:
     params_ptr->sys.fb.hall.track_loop.w0_w = HZ_TO_RADSEC(75.0f); // [Ra/sec]
@@ -206,7 +215,7 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     params_ptr->ctrl.speed.bw = HZ_TO_RADSEC(MOTOR_CTRL_SPEED_BW); // [Ra/sec], at least 0.5 dec below field weakening loop's bandwidth
     params_ptr->ctrl.speed.ki_multiple = MOTOR_CTRL_SPEED_KI_MULTIPLE; // [#]
     params_ptr->ctrl.speed.ol_cl_tr_coeff = PERC_TO_NORM(MOTOR_CTRL_SPEED_OL_CL_TR_COEFF); // [%]
-
+    params_ptr->ctrl.speed.ff_coef = PERC_TO_NORM(MOTOR_CTRL_SPEED_FF_COEFF); // [#]
     // Current Control Parameters:
 #if defined(CTRL_METHOD_TBC)    
     params_ptr->ctrl.curr.bypass = MOTOR_CTRL_CURRENT_BYPASS;
@@ -216,7 +225,7 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     params_ptr->ctrl.curr.ff_coef = PERC_TO_NORM(MOTOR_CTRL_CURRENT_FF_COEFF); // [#]
     params_ptr->ctrl.curr.i_cmd_thresh = MOTOR_CTRL_CURRENT_STARTUP_THRESH; // [A]
     params_ptr->ctrl.curr.i_cmd_hyst = params_ptr->ctrl.curr.i_cmd_thresh * 0.80f; // [A]
-    params_ptr->ctrl.curr.i_cmd_ol = 0.40f * params_ptr->motor.i_cont; // [A]
+    params_ptr->ctrl.curr.i_cmd_ol = MOTOR_CTRL_CURRENT_OPEN_LOOP_CMD; // [A]
 
 #elif defined(CTRL_METHOD_SFO)
     // Torque Controller Parameters:
@@ -238,7 +247,12 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     params_ptr->ctrl.delta.bw_mult_wh.elec = HZ_TO_RADSEC(MOTOR_CTRL_BW_MUL_HS_THRESH); // [Ra/sec-elec]
     params_ptr->ctrl.delta.pole_sep = MOTOR_CTRL_LOAD_POLE_SEP_RATIO; // [#]
 #endif
-
+#if defined(CTRL_METHOD_RFO)
+    params_ptr->ctrl.position.bw =HZ_TO_RADSEC(MOTOR_CTRL_POSITION_BW);  //[Ra/sec]
+    params_ptr->ctrl.position.pole_sep = MOTOR_CTRL_POSITION_POLE_SEP_RATIO; //[#]
+    params_ptr->ctrl.position.ff_coef = PERC_TO_NORM(MOTOR_CTRL_POSITION_FF_COEFF); // [#]
+    params_ptr->ctrl.position.pi_output_limit = MECH_TO_ELEC(HZ_TO_RADSEC(RPM_TO_HZ(MOTOR_CTRL_POSITION_PI_LIMIT)), MOTOR_POLE); //[Ra/Sec]
+#endif
     // Voltage Control Parameters:
     params_ptr->ctrl.volt.w_thresh.elec = MECH_TO_ELEC(HZ_TO_RADSEC(RPM_TO_HZ(MOTOR_CTRL_VOLT_STARTUP_THRESH)), MOTOR_POLE); // [Ra/sec-elec], min speed for voltage control
     params_ptr->ctrl.volt.w_hyst.elec = params_ptr->ctrl.volt.w_thresh.elec * 0.5f; // [Ra/sec-elec]
@@ -267,11 +281,11 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     params_ptr->ctrl.six_pulse_inj.i_peak = MOTOR_CTRL_SIX_PULSE_INJ_MAX_CURRENT; // [A], this is the target value, not the actual value
 
     // High Frequency Injection Parameters:
-    params_ptr->ctrl.high_freq_inj.w_h = HZ_TO_RADSEC(MOTOR_CTRL_HFI_INJECT_FREQ); // [Ra/sec], at least 1 decade below switching frequency
-    params_ptr->ctrl.high_freq_inj.w_sep = HZ_TO_RADSEC(MOTOR_CTRL_HFI_SEPARATION_FREQ); // [Ra/sec], at least 1 decade below switching frequency
+    params_ptr->ctrl.high_freq_inj.type = MOTOR_CTRL_HFI_TYPE; // [], hfi type
+    params_ptr->ctrl.high_freq_inj.i_peak = MOTOR_CTRL_HFI_MAX_CURRENT; // [A], excitation current peak
+    params_ptr->ctrl.high_freq_inj.w_h = HZ_TO_RADSEC(MOTOR_CTRL_HFI_INJECT_FREQ); // [Ra/sec], excitation freqeuncy, must be less than fs0/8
+    params_ptr->ctrl.high_freq_inj.sine.w_sep = HZ_TO_RADSEC(MOTOR_CTRL_HFI_SEPARATION_FREQ); // [Ra/sec], separation freqeuncy
     params_ptr->ctrl.high_freq_inj.pll.w0 = HZ_TO_RADSEC(60.0f); // [Ra/sec]
-    params_ptr->ctrl.high_freq_inj.pll.w_max.elec = 0.5f * (params_ptr->ctrl.high_freq_inj.w_h - params_ptr->ctrl.high_freq_inj.w_sep); // [Ra/sec-elec]
-    params_ptr->ctrl.high_freq_inj.i_qd_r_peak.d = MOTOR_CTRL_HFI_MAX_CURRENT; // [A], excitation current peak (d-axis), limiting factor (larger than q-axis)
 
     // Profiler Parameters (needs high fs0 & fpwm e.g. fs0=30kHz, fpwm=60kHz):
     params_ptr->profiler.overwrite = MOTOR_CTRL_PROFILER_PARAM_OVERWRITE; // []
@@ -343,6 +357,7 @@ void PARAMS_InitAutoCalc(PARAMS_t* params_ptr)
     params_ptr->sys.samp.tpwm = 1.0f / params_ptr->sys.samp.fpwm; // [Hz]
     params_ptr->sys.samp.fs1 = params_ptr->sys.samp.fs0 / params_ptr->sys.samp.fs0_fs1_ratio; // [Hz]
     params_ptr->sys.samp.ts1 = 1.0f / params_ptr->sys.samp.fs1; // [sec]
+
     params_ptr->sys.analog.shunt.hyb_mod.adc_d_min = 2.0f * params_ptr->sys.analog.shunt.hyb_mod.adc_t_min * params_ptr->sys.samp.fpwm; // [%]
 
     // Fault Parameters:
@@ -368,6 +383,7 @@ void PARAMS_InitAutoCalc(PARAMS_t* params_ptr)
     case Speed_Mode_FOC_Sensorless_Curr_Startup:
     case Speed_Mode_FOC_Encoder_Align_Startup:
     case Speed_Mode_FOC_Hall:
+    case Position_Mode_FOC_Encoder_Align_Startup:
 #elif defined(CTRL_METHOD_TBC)
     case Speed_Mode_Block_Comm_Hall:
 #endif
@@ -415,7 +431,8 @@ void PARAMS_InitAutoCalc(PARAMS_t* params_ptr)
       {
           params_ptr->sys.fb.mode = Hall;
       }
-      else if ((params_ptr->ctrl.mode == Speed_Mode_FOC_Encoder_Align_Startup) || (params_ptr->ctrl.mode == Curr_Mode_FOC_Encoder_Align_Startup))
+      else if ((params_ptr->ctrl.mode == Speed_Mode_FOC_Encoder_Align_Startup) || (params_ptr->ctrl.mode == Curr_Mode_FOC_Encoder_Align_Startup)
+            || (params_ptr->ctrl.mode == Position_Mode_FOC_Encoder_Align_Startup))
       {
           params_ptr->sys.fb.mode = AqB_Enc;
       }
@@ -461,10 +478,18 @@ void PARAMS_InitAutoCalc(PARAMS_t* params_ptr)
       params_ptr->ctrl.speed.kp = ((8.0f / 3.0f) / (POW_TWO(params_ptr->motor.P) * params_ptr->motor.lam)) * params_ptr->mech.inertia * params_ptr->ctrl.speed.bw; // [A/(Ra/sec-elec)]
       params_ptr->ctrl.speed.ki = ((8.0f / 3.0f) / (POW_TWO(params_ptr->motor.P) * params_ptr->motor.lam)) * params_ptr->mech.viscous * params_ptr->ctrl.speed.bw * params_ptr->ctrl.speed.ki_multiple; // [A/(Ra/sec-elec).(Ra/sec)]
     }
-    params_ptr->ctrl.speed.ff_k_inertia = ((8.0f / 3.0f) / (POW_TWO(params_ptr->motor.P) * params_ptr->motor.lam)) * params_ptr->mech.inertia; // [A/(Ra/sec-elec).sec]
-    params_ptr->ctrl.speed.ff_k_viscous = ((8.0f / 3.0f) / (POW_TWO(params_ptr->motor.P) * params_ptr->motor.lam)) * params_ptr->mech.viscous; // [A/(Ra/sec-elec)]
-    params_ptr->ctrl.speed.ff_k_friction = ((4.0f / 3.0f) / (params_ptr->motor.P * params_ptr->motor.lam)) * params_ptr->mech.friction; // [A]
-
+    if(params_ptr->ctrl.mode == Position_Mode_FOC_Encoder_Align_Startup)
+    {
+      params_ptr->ctrl.speed.ff_k_inertia =0; // [A/(Ra/sec-elec).sec]
+      params_ptr->ctrl.speed.ff_k_viscous =0; // [A/(Ra/sec-elec)]
+      params_ptr->ctrl.speed.ff_k_friction =0; // [A]
+    }
+    else
+    {
+      params_ptr->ctrl.speed.ff_k_inertia =((8.0f / 3.0f) / (POW_TWO(params_ptr->motor.P) * params_ptr->motor.lam)) * params_ptr->mech.inertia*params_ptr->ctrl.speed.ff_coef; // [A/(Ra/sec-elec).sec]
+      params_ptr->ctrl.speed.ff_k_viscous =((8.0f / 3.0f) / (POW_TWO(params_ptr->motor.P) * params_ptr->motor.lam)) * params_ptr->mech.viscous*params_ptr->ctrl.speed.ff_coef; // [A/(Ra/sec-elec)]
+      params_ptr->ctrl.speed.ff_k_friction =((4.0f / 3.0f) / (params_ptr->motor.P * params_ptr->motor.lam)) * params_ptr->mech.friction*params_ptr->ctrl.speed.ff_coef; // [A]
+    }
 #elif defined(CTRL_METHOD_SFO)
     if(!params_ptr->autocal_disable.speed_control) /*Skip the calculation if this bit is set*/
     {
@@ -499,6 +524,11 @@ void PARAMS_InitAutoCalc(PARAMS_t* params_ptr)
     params_ptr->ctrl.curr.v_max.q = LINE_TO_PHASE(params_ptr->sys.vdc_nom); // [V]
     params_ptr->ctrl.curr.v_max.d = LINE_TO_PHASE(params_ptr->sys.vdc_nom); // [V]
 
+    if(!params_ptr->autocal_disable.position_control) /*Skip the calculation if this bit is set*/
+    {
+      params_ptr->ctrl.position.kp = (params_ptr->ctrl.position.pole_sep)*(params_ptr->motor.P/2)* params_ptr->ctrl.position.bw;   //[(Ra/Sec-elec)/(Ra)]
+      params_ptr->ctrl.position.ki = (params_ptr->ctrl.position.pole_sep-1)*(params_ptr->motor.P/2)* POW_TWO(params_ptr->ctrl.position.bw); //[(Ra/sec). (Ra/Sec-elec)/(Ra)] 
+    }
 #elif defined(CTRL_METHOD_TBC)
     params_ptr->ctrl.curr.k_bypass = params_ptr->motor.r * ONE_OVER_SQRT_TWO; // [V/A]
     if(!params_ptr->autocal_disable.current_control) /*Execute calculation if this bit is not set*/
@@ -559,28 +589,47 @@ void PARAMS_InitAutoCalc(PARAMS_t* params_ptr)
     params_ptr->ctrl.six_pulse_inj.v_pulse = (1.5f / (1.0f - EXP_MINUS_ONE)) * params_ptr->motor.r * params_ptr->ctrl.six_pulse_inj.i_peak; // [V], dc+ to dc-
 
     // High Frequency Injection Parameters:
-    params_ptr->ctrl.high_freq_inj.v_qd_r_coeff.q = params_ptr->ctrl.high_freq_inj.i_qd_r_peak.d * params_ptr->motor.ld; // [V/(Ra/sec)]
-    params_ptr->ctrl.high_freq_inj.v_qd_r_coeff.d = params_ptr->ctrl.high_freq_inj.i_qd_r_peak.d * params_ptr->motor.ld * params_ptr->ctrl.high_freq_inj.w_h; // [V]
-
-    params_ptr->ctrl.high_freq_inj.i_qd_r_peak.q = params_ptr->ctrl.high_freq_inj.i_qd_r_peak.d *
+    HIGH_FREQ_INJ_PARAMS_t* const params_hfi = &params_ptr->ctrl.high_freq_inj; // for better code readability
+    params_hfi->sine.i_qd_r_peak.d = params_hfi->i_peak; // [A], excitation current peak (d-axis), limiting factor (larger than q-axis)
+    params_hfi->sine.i_qd_r_peak.q = params_hfi->sine.i_qd_r_peak.d *
         0.5f * (params_ptr->motor.zeta - 1.0f) / params_ptr->motor.zeta; //[A], excitation current peak (q-axis), smaller than (d-axis)
 
-    params_ptr->ctrl.high_freq_inj.pll.kp = params_ptr->ctrl.high_freq_inj.pll.w0 / params_ptr->ctrl.high_freq_inj.i_qd_r_peak.q; // [(Ra/sec-elec)/A]
-    params_ptr->ctrl.high_freq_inj.pll.ki = 0.25f * POW_TWO(params_ptr->ctrl.high_freq_inj.pll.w0) / params_ptr->ctrl.high_freq_inj.i_qd_r_peak.q; // [(Ra/sec).(Ra/sec-elec)/A]
-    params_ptr->ctrl.high_freq_inj.pll.th_offset.elec = 0.0f;
+    params_hfi->sine.v_qd_r_coeff.q = params_hfi->sine.i_qd_r_peak.d * params_ptr->motor.ld; // [V/(Ra/sec)]
+    params_hfi->sine.v_qd_r_coeff.d = params_hfi->sine.i_qd_r_peak.d * params_ptr->motor.ld * params_hfi->w_h; // [V]
 
-    params_ptr->ctrl.high_freq_inj.lpf_biquad_a[0] = 1.0f; // [#], dc gain
-    params_ptr->ctrl.high_freq_inj.lpf_biquad_a[1] = 0.0f; // [1/(Ra/sec)]
-    params_ptr->ctrl.high_freq_inj.lpf_biquad_a[2] = 0.0f; // [1/(Ra/sec)^2]
-    params_ptr->ctrl.high_freq_inj.lpf_biquad_b[0] = 1.0f; // [#]
-    params_ptr->ctrl.high_freq_inj.lpf_biquad_b[1] = 2.0f / params_ptr->ctrl.high_freq_inj.w_sep; // [1/(Ra/sec)]
-    params_ptr->ctrl.high_freq_inj.lpf_biquad_b[2] = 1.0f / POW_TWO(params_ptr->ctrl.high_freq_inj.w_sep); // [1/(Ra/sec)^2]
+    params_hfi->sine.lpf_biquad_a[0] = 1.0f; // [#], dc gain
+    params_hfi->sine.lpf_biquad_a[1] = 0.0f; // [1/(Ra/sec)]
+    params_hfi->sine.lpf_biquad_a[2] = 0.0f; // [1/(Ra/sec)^2]
+    params_hfi->sine.lpf_biquad_b[0] = 1.0f; // [#]
+    params_hfi->sine.lpf_biquad_b[1] = 2.0f / params_hfi->sine.w_sep; // [1/(Ra/sec)]
+    params_hfi->sine.lpf_biquad_b[2] = 1.0f / POW_TWO(params_hfi->sine.w_sep); // [1/(Ra/sec)^2]
+
+    params_hfi->square.t_h = QUANTIZE_FLOAT(0.5f / RADSEC_TO_HZ(params_hfi->w_h), params_ptr->sys.samp.ts0); // [sec]
+    params_hfi->square.v_h = 2.0f * params_hfi->i_peak * params_ptr->motor.ld * RADSEC_TO_HZ(params_hfi->w_h); // [V]
+
+    if (params_hfi->type == Sine_Wave)
+    {
+        params_hfi->pll.w_max.elec = 0.5f * (params_hfi->w_h - params_hfi->sine.w_sep); // [Ra/sec-elec]
+        params_hfi->pll.kp = params_hfi->pll.w0 / params_hfi->sine.i_qd_r_peak.q; // [(Ra/sec-elec)/A]
+        params_hfi->pll.ki = 0.25f * POW_TWO(params_hfi->pll.w0) / params_hfi->sine.i_qd_r_peak.q; // [(Ra/sec).(Ra/sec-elec)/A]
+        params_hfi->pll.th_offset.elec = 0.0f;
 #if defined(CTRL_METHOD_RFO)
-    params_ptr->ctrl.high_freq_inj.bw_red_coeff = params_ptr->ctrl.high_freq_inj.w_sep / params_ptr->ctrl.curr.bw;
+        params_hfi->bw_red_coeff = params_hfi->sine.w_sep / params_ptr->ctrl.curr.bw;
 #elif defined(CTRL_METHOD_SFO)
-    params_ptr->ctrl.high_freq_inj.bw_red_coeff = params_ptr->ctrl.high_freq_inj.w_sep / MAX(params_ptr->ctrl.flux.bw, params_ptr->ctrl.delta.bw);
+        params_hfi->bw_red_coeff = params_hfi->sine.w_sep / MAX(params_ptr->ctrl.flux.bw, params_ptr->ctrl.delta.bw);
 #endif
-    params_ptr->ctrl.high_freq_inj.lock_time = RADSEC_TO_TAU(params_ptr->ctrl.high_freq_inj.pll.w0) * 40.0f; // [sec]
+    }
+    else if (params_hfi->type == Square_Wave)
+    {
+        params_hfi->pll.w_max.elec = params_ptr->obs.pll.w_max.elec; // [Ra/sec-elec]
+        params_hfi->pll.kp = params_hfi->pll.w0 *
+            2.0f * params_hfi->square.v_h * (params_ptr->motor.zeta - 1.0f) / params_ptr->motor.lq * params_hfi->square.t_h; // [(Ra/sec-elec)/(A/sec)]
+        params_hfi->pll.ki = 0.5f * params_hfi->pll.w0 * params_hfi->pll.kp; // [(Ra/sec).(Ra/sec-elec)/(A/sec)]
+        params_hfi->pll.th_offset.elec = 0.0f;
+        params_hfi->bw_red_coeff = 1.0f;
+    }
+    params_hfi->lock_time = RADSEC_TO_TAU(params_hfi->pll.w0) * 40.0f; // [sec]
+
 
     // Profiler Parameters:
     // Ranges:
