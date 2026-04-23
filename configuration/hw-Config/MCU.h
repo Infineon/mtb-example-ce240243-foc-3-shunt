@@ -39,11 +39,15 @@
 * of such system or application assumes all risk of such use and in doing
 * so agrees to indemnify Cypress against all liability.
 *******************************************************************************/
+
 #pragma once
 #include "cybsp.h"
 #include "cy_em_eeprom.h"
 #include "MotorCtrlHWConfig.h"
 #include "Controller.h"
+
+#define MOTOR_CTRL_ID_MOTOR0 (0U)
+#define MOTOR_CTRL_ID_MOTOR1 (1U)
 
 /* EEPROM storage Emulated EEPROM flash. */
 extern const uint8_t *Em_Eeprom_Storage[MOTOR_CTRL_NO_OF_MOTOR];
@@ -62,6 +66,7 @@ typedef struct
     uint32_t count;         // [ticks]
     uint32_t period;        // [ticks]
     float duty_cycle_coeff; // [ticks/%]
+    uint32_t deadtime;      // [ticks]
 } MCU_TIMER_t;
 
 typedef struct
@@ -87,11 +92,16 @@ typedef struct
 
 typedef struct
 {
+  TIMER_t timer;
+  volatile float cpu_load;      // [pu] CPU load (0.0 = 0%, 1.0 = 100%), volatile: written by main loop, read by other contexts
+}MCU_CPU_CALC_t;
+typedef struct
+{
     bool init_done;
+
     cy_stc_eeprom_config_t config;
     cy_en_em_eeprom_status_t status;
-    cy_stc_eeprom_context_t context; 
-
+    cy_stc_eeprom_context_t context;
 } MCU_EEPROM_t;
 
 typedef struct
@@ -100,13 +110,14 @@ typedef struct
     IRQn_Type nvic_dma_adc_1;
     IRQn_Type nvic_dma_adc_2;
     IRQn_Type nvic_sync_isr1;
-    uint32_t state;    
+    uint32_t state;
 } MCU_INT_t;  // interrupts
 
 typedef struct
 {
     float tcpwm;
     float hall;
+    float encoder;
 } MCU_CLK_FRQ_t;  // [Hz]
 
 typedef struct
@@ -121,28 +132,63 @@ typedef struct
     MCU_TIME_CAP_t isr0_exe;
     MCU_TIME_CAP_t isr1_exe;
     MCU_ADC_MUX_t adc_mux;
+    MCU_CPU_CALC_t cpu_calc;
 } MCU_t;
 
+/** @brief Global MCU context for all motor instances. */
 extern MCU_t mcu[MOTOR_CTRL_NO_OF_MOTOR];
 
-// Initializations
+/**
+ * @brief Initialize MCU hardware and runtime state for a motor instance.
+ * @param motor_id Motor instance index.
+ */
 void MCU_Init(uint8_t motor_id);
 
-// Critical section
+/** @brief Enter critical section. */
 void MCU_EnterCriticalSection(void);
+
+/** @brief Exit critical section. */
 void MCU_ExitCriticalSection(void);
 
-// High-Z enter/exit
+/**
+ * @brief Put gate driver outputs into high-impedance state.
+ * @param motor_id Motor instance index.
+ */
 void MCU_GateDriverEnterHighZ(uint8_t motor_id);
+
+/**
+ * @brief Exit high-impedance state and restore gate driver outputs.
+ * @param motor_id Motor instance index.
+ */
 void MCU_GateDriverExitHighZ(uint8_t motor_id);
 
-// FLash read/write
-bool MCU_FlashRead(uint8_t motor_id, PARAMS_ID_t id, PARAMS_t *ram_data);
-bool MCU_FlashWrite(uint8_t motor_id, PARAMS_t *ram_data);
+/**
+ * @brief Read parameter block from non-volatile storage.
+ * @param motor_id Motor instance index.
+ * @param id Expected parameter identifier metadata.
+ * @param ram_data Destination buffer in RAM.
+ * @return true if read succeeds and identifier matches.
+ */
+bool MCU_FlashRead(uint8_t motor_id, PARAMS_ID_t id, PARAMS_t* ram_data);
 
+/**
+ * @brief Write parameter block to non-volatile storage.
+ * @param motor_id Motor instance index.
+ * @param ram_data Source parameter buffer in RAM.
+ * @return true if write succeeds.
+ */
+bool MCU_FlashWrite(uint8_t motor_id, PARAMS_t* ram_data);
 
-// Start/stop PWMs, ADCs, DMA, ISRs
+/**
+ * @brief Start PWM/ADC/DMA/timer peripherals and related interrupts.
+ * @param motor_id Motor instance index.
+ */
 void MCU_StartPeripherals(uint8_t motor_id);
+
+/**
+ * @brief Stop PWM/ADC/DMA/timer peripherals and related interrupts.
+ * @param motor_id Motor instance index.
+ */
 void MCU_StopPeripherals(uint8_t motor_id);
 
 // Indicating whether phase voltages are currently being sampled
@@ -153,6 +199,7 @@ void MCU_RunISR0(void); // Fast, highest priority
 void MCU_RunISR1(void); // Slow, second highest priority
 
 #if defined (EXE_TIMER_ENABLED)
+void MCU_CPULoadCalc(void);
 // Handling execution time capture measurements
 void MCU_StartTimeCap(MCU_TIME_CAP_t *time_cap);       
 void MCU_StopTimeCap(MCU_TIME_CAP_t *time_cap);        

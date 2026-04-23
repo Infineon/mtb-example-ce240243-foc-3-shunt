@@ -79,5 +79,8 @@ int main(void)
     for (;;)
     {
 
+#if (CPU_LOAD_CALC_ENABLED)
+        MCU_CPULoadCalc();
+#endif
     }
 }

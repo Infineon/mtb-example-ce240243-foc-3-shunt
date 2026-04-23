@@ -32,4 +32,14 @@
 *******************************************************************************/
 #pragma once
 
+#include "MotorCtrlHWConfig.h"
 #include "Controller.h"
+
+
+void DriveEnableControlforPot(MOTOR_t *motor_ptr);
+
+/* Set to (1U) to enable potentiometer-based automatic drive enable/disable control.
+ * When enabled, DriveEnableControlforPot() is called each ISR cycle to evaluate
+ * the command against configured hysteresis thresholds and update vars->en.
+ * When disabled (0U), the call sites in MCU.c are excluded by the preprocessor. */
+#define DRIVE_ENABLE_CONTROL_POT    (0U)

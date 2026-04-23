@@ -32,6 +32,7 @@
 *******************************************************************************/
 #include "cycfg_mcdi.h"
 #include "ParamConfig.h"
+
 #if defined(MOTOR_CTRL_USE_GUI_GENERATED_PARAM)
 #include "ParamConfig_Generated.h"
 #endif
@@ -59,7 +60,6 @@ void PARAMS_Init(MOTOR_t *motor_ptr)
             Motor_Ctrl_AdvanceParameter(params_ptr); /* Update some of auto calculation parameter such as Kp, ki  and  auto calculation for those parameters are skipped*/
 #endif
         }
-
         PARAMS_InitAutoCalc(params_ptr);
         hw_fcn.FlashWrite(motor_ptr->motor_instance,params_ptr);
     }
@@ -98,6 +98,7 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     params_ptr->sys.samp.fs0 = vres_0_motor_0_cfg.pwmSwFrequency; //MOTOR_CTRL_FASTLOOP_FREQ; // [Hz], at least 1.2 decade above maximum electrical frequency, 1.5kHz~>25kHz
     params_ptr->sys.samp.fs0_fs1_ratio = vres_0_motor_0_cfg.slowDivider; //MOTOR_CTRL_FS0_FS1_RATIO; // []
 
+    params_ptr->sys.samp.deadtime = MOTOR_CTRL_PWM_DEADTIME; // [sec]
     // Calibration Parameters:
     params_ptr->sys.analog.calib.i_u = (CALIB_PARAMS_t){ 1.0f, 0.0f }; // {%, A}
     params_ptr->sys.analog.calib.i_v = (CALIB_PARAMS_t){ 1.0f, 0.0f }; // {%, A}
@@ -117,15 +118,22 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     // Shunt Parameters:
     params_ptr->sys.analog.shunt.type = ADC_CS_SHUNT_TYPE;
     params_ptr->sys.analog.shunt.opamp_gain = ADC_CS_OPAMP_GAIN;
-    params_ptr->sys.analog.shunt.hyb_mod.adc_t_min = ADC_CS_SS_MIN_SEGMENT_TIME; // [sec]
-    params_ptr->sys.analog.shunt.hyb_mod.ki = MOTOR_CTRL_SS_HMOD_KI; // [#]
+    
+    params_ptr->sys.analog.shunt.single_shunt.type = MOTOR_CTRL_SS_MEAS_TYPE;
+    params_ptr->sys.analog.shunt.single_shunt.adc_t_min = ADC_CS_SS_MIN_SEGMENT_TIME; // [sec]
+    params_ptr->sys.analog.shunt.single_shunt.ki = MOTOR_CTRL_SS_HMOD_KI; // [#]
+    params_ptr->sys.analog.shunt.single_shunt.adc_t_sh_delay =MOTOR_CTRL_SS_PS_SH_DELAY; //[sec]
+    
     params_ptr->sys.analog.shunt.res = ADC_CS_SHUNT_RES; // [Ohm]
     params_ptr->sys.analog.shunt.cs_settle_raio = ADC_CS_SETTLE_RATIO;
     
     params_ptr->sys.analog.shunt.current_sense_polarity = ADC_CS_CURRENT_SENSE_POLARITY;
     params_ptr->sys.analog.cs_meas_type = ADC_CS_CURRENT_MEASUREMENT_TYPE;
     params_ptr->sys.analog.shunt.current_sensitivity = ADC_CS_CURRENT_SENSITIVITY; // [V/A]
-
+    
+    params_ptr->sys.analog.volt.vdc_adc_scale = ADC_SCALE_VDC; //[V/V]
+    params_ptr->sys.analog.volt.vuvw_adc_scale = ADC_SCALE_VUVW; //[V/V]
+ 
     params_ptr->sys.analog.offset_null_time = 0.250f; // [sec], this will determine the loop-gain of auto-offset-nulling loop
     // Rate Limiter Parameters:
     params_ptr->sys.rate_lim.w_cmd.elec = MECH_TO_ELEC(HZ_TO_RADSEC(RPM_TO_HZ(MOTOR_CTRL_SPEED_CMD_RATE)), MOTOR_POLE); // [(Ra/sec-elec)/sec]
@@ -144,7 +152,15 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     params_ptr->sys.faults.temp_ps_thresh = MOTOR_CTRL_OVER_TEMP_THRESH; // [Celsius]
     params_ptr->sys.faults.short_method = MOTOR_CTRL_FAULT_SHORT_METHOD; // []
     params_ptr->sys.faults.max_clr_tries = MOTOR_CTRL_MAX_FAULT_CLR_TRIES; // []
+    params_ptr->sys.faults.clr_try_period = MOTOR_CTRL_FAULT_CLR_TRY_PERIOD;// [sec]    
+    params_ptr->sys.faults.cmd_clr_thresh = 1; //[%] 
+     
     params_ptr->sys.faults.watchdog_time = 1000; // [ms]
+    
+    params_ptr->sys.faults.phase_loss.tau = MOTOR_CTLR_FAULT_PHASE_LOSS_TIME;//[sec]   
+    params_ptr->sys.faults.phase_loss.zero_current_thres = MOTOR_CTLR_FAULT_PHASE_LOSS_MIN_CURRENT; //[A]
+    
+
     // Command Parameters:
     params_ptr->sys.cmd.source = MOTOR_CTRL_COMMAND_SOURCE;
     params_ptr->sys.cmd.w_max.mech = HZ_TO_RADSEC(RPM_TO_HZ(MOTOR_CTRL_COMMAND_MAX_SPEED)); //[Ra/sec-elec]
@@ -173,8 +189,14 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     params_ptr->sys.fb.encoder.w_zsd_thresh.elec =  MECH_TO_ELEC(HZ_TO_RADSEC(RPM_TO_HZ(MOTOR_CTRL_ENCODER_ZERO_SPEED_THRESH)), MOTOR_POLE); // [Ra/sec-elec]
 
     params_ptr->sys.boot_time = MOTOR_CTRL_BOOTSTRAP_TIME; // [sec]
+    params_ptr->sys.boot_mode  = MOTOR_CTRL_BOOTSTRAP_MODE;
 #if defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_SFO)
     params_ptr->sys.dyno_lock_time = 0.500f; // [sec]
+#endif
+#if defined(CTRL_METHOD_RFO)
+   params_ptr->sys.catch_spin.mode = MOTOR_CTRL_CATCH_SPIN_MODE;
+   params_ptr->sys.catch_spin.time = MOTOR_CTRL_CATCH_SPIN_TIME; // [sec]
+   params_ptr->sys.catch_spin.w_thresh.elec = MECH_TO_ELEC(HZ_TO_RADSEC(RPM_TO_HZ(MOTOR_CTRL_CATCH_SPIN_SPEED_THRESH)), MOTOR_POLE) ; // [Ra/sec-elec]
 #endif
     params_ptr->sys.vdc_nom = MOTOR_CTRL_VDC_NOM_VOLT; // [V]
 
@@ -189,7 +211,7 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
     params_ptr->obs.biquad_b[1] = 1.0f / HZ_TO_RADSEC(25.0f) + 1.0f / HZ_TO_RADSEC(75.0f); // [1/(Ra/sec)]
     params_ptr->obs.biquad_b[2] = 1.0f / HZ_TO_RADSEC(25.0f) / HZ_TO_RADSEC(75.0f); // [1/(Ra/sec)^2]
     params_ptr->obs.pll.w0 = HZ_TO_RADSEC(75.0f); // [Ra/sec]
-    params_ptr->obs.pll.w_max.elec = params_ptr->motor.w_max.elec * 1.5f; // [Ra/sec-elec]
+    params_ptr->obs.pll.w_max.elec = MECH_TO_ELEC(HZ_TO_RADSEC(RPM_TO_HZ(MOTOR_CTRL_OBS_MAX_SPEED)), MOTOR_POLE);; // [Ra/sec-elec]
     params_ptr->obs.w_thresh.elec = MECH_TO_ELEC(HZ_TO_RADSEC(RPM_TO_HZ(MOTOR_CTRL_OBS_SPEED_THRESH)), MOTOR_POLE) ; // [Ra/sec-elec]
     params_ptr->obs.w_hyst.elec = params_ptr->obs.w_thresh.elec * 0.25f; // [Ra/sec-elec]
     params_ptr->obs.lock_time = MOTOR_CTRL_OBS_MIN_LOCK_TIME; // [sec]
@@ -266,7 +288,7 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
 
 #if defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_SFO)
 
-    // Flux Weakenning Parameters:
+    // Flux Weakening Parameters:
     params_ptr->ctrl.flux_weaken.en = MOTOR_CTRL_FLUX_WEAKEN; // [#]
     params_ptr->ctrl.flux_weaken.vdc_coeff = LINE_TO_PHASE(MOTOR_CTRL_FLUX_WEAKEN_VOLT_MARGIN); // [#]
 #if defined(CTRL_METHOD_RFO)
@@ -308,7 +330,6 @@ void PARAMS_InitManual(PARAMS_t* params_ptr)
 #endif
 
 }
-
 
 void PARAMS_InitAutoCalc(PARAMS_t* params_ptr)
 {
@@ -358,8 +379,8 @@ void PARAMS_InitAutoCalc(PARAMS_t* params_ptr)
     params_ptr->sys.samp.fs1 = params_ptr->sys.samp.fs0 / params_ptr->sys.samp.fs0_fs1_ratio; // [Hz]
     params_ptr->sys.samp.ts1 = 1.0f / params_ptr->sys.samp.fs1; // [sec]
 
-    params_ptr->sys.analog.shunt.hyb_mod.adc_d_min = 2.0f * params_ptr->sys.analog.shunt.hyb_mod.adc_t_min * params_ptr->sys.samp.fpwm; // [%]
-
+    params_ptr->sys.analog.shunt.single_shunt.adc_d_min = 2.0f * params_ptr->sys.analog.shunt.single_shunt.adc_t_min * params_ptr->sys.samp.fpwm; // [%]
+    params_ptr->sys.analog.shunt.single_shunt.adc_d_sh_delay =2.0f *params_ptr->sys.analog.shunt.single_shunt.adc_t_sh_delay * params_ptr->sys.samp.fpwm; //[%]; 
     // Fault Parameters:
     if(!params_ptr->autocal_disable.vdc_fault_threshold) /*Skip the calculation if this bit is set*/
     {
@@ -370,58 +391,6 @@ void PARAMS_InitAutoCalc(PARAMS_t* params_ptr)
     {
       params_ptr->sys.faults.w_thresh.elec = params_ptr->motor.w_max.elec * 2.0f; // [Ra/sec-elec]
     }
-    switch (params_ptr->ctrl.mode)
-    {
-    case Volt_Mode_Open_Loop:
-#if defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_SFO)
-    case Speed_Mode_FOC_Sensorless_Align_Startup:
-    case Speed_Mode_FOC_Sensorless_SixPulse_Startup:
-    case Speed_Mode_FOC_Sensorless_HighFreq_Startup:
-    case Speed_Mode_FOC_Sensorless_Volt_Startup:
-#endif
-#if defined(CTRL_METHOD_RFO)
-    case Speed_Mode_FOC_Sensorless_Curr_Startup:
-    case Speed_Mode_FOC_Encoder_Align_Startup:
-    case Speed_Mode_FOC_Hall:
-    case Position_Mode_FOC_Encoder_Align_Startup:
-#elif defined(CTRL_METHOD_TBC)
-    case Speed_Mode_Block_Comm_Hall:
-#endif
-        params_ptr->sys.faults.cmd_clr_thresh = (params_ptr->ctrl.volt.w_thresh.elec - params_ptr->ctrl.volt.w_hyst.elec) / MECH_TO_ELEC(params_ptr->sys.cmd.w_max.mech, params_ptr->motor.P);
-        break;
-#if defined(CTRL_METHOD_RFO)
-    case Curr_Mode_Open_Loop:
-    case Curr_Mode_FOC_Sensorless_Align_Startup:
-    case Curr_Mode_FOC_Sensorless_SixPulse_Startup:
-    case Curr_Mode_FOC_Sensorless_HighFreq_Startup:
-    case Curr_Mode_FOC_Sensorless_Dyno:
-    case Curr_Mode_FOC_Encoder_Align_Startup:
-    case Curr_Mode_FOC_Hall:
-#elif defined(CTRL_METHOD_TBC)
-    case Curr_Mode_Block_Comm_Hall:
-#endif
-#if defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_TBC)
-        params_ptr->sys.faults.cmd_clr_thresh = (params_ptr->ctrl.curr.i_cmd_thresh - params_ptr->ctrl.curr.i_cmd_hyst) / params_ptr->sys.cmd.i_max;
-        break;
-#endif
-#if defined(CTRL_METHOD_SFO)
-    case Trq_Mode_FOC_Sensorless_Align_Startup:
-    case Trq_Mode_FOC_Sensorless_SixPulse_Startup:
-    case Trq_Mode_FOC_Sensorless_HighFreq_Startup:
-    case Trq_Mode_FOC_Sensorless_Dyno:
-        params_ptr->sys.faults.cmd_clr_thresh = (params_ptr->ctrl.trq.T_cmd_thresh - params_ptr->ctrl.trq.T_cmd_hyst) / params_ptr->sys.cmd.T_max;
-        break;
-#endif
-#if defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_SFO)
-    case Profiler_Mode:
-        params_ptr->sys.faults.cmd_clr_thresh = params_ptr->profiler.cmd_thresh - params_ptr->profiler.cmd_hyst;
-        break;
-#endif
-    default:
-        params_ptr->sys.faults.cmd_clr_thresh = 0.0f;
-        break;
-    }
-
 #if defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_TBC)
     if(params_ptr->sys.fb.mode != Direct)
     {
@@ -571,7 +540,7 @@ void PARAMS_InitAutoCalc(PARAMS_t* params_ptr)
 
 #if defined(CTRL_METHOD_RFO) || defined(CTRL_METHOD_SFO)
 
-    // Flux Weakenning Parameters:
+    // Flux Weakening Parameters:
 #if defined(CTRL_METHOD_RFO)
     if(!params_ptr->autocal_disable.flux_weakening) /*Execute calculation if this bit is not set*/
     {

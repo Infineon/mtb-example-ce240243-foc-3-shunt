@@ -144,7 +144,7 @@ VFP_SELECT=hardfp
 # NOTE: Includes and defines should use the INCLUDES and DEFINES variable
 # above.
 ifeq ($(TOOLCHAIN),GCC_ARM)
-CFLAGS=-Os
+CFLAGS=-Ofast
 CFLAGS+=-Wno-maybe-uninitialized    # This is getting rid of compiler warning when compiling PDL source file cyhal_spi.c
 endif
 
